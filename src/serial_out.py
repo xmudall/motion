@@ -35,12 +35,12 @@ def send_data(data, s):
         motion = build_byte(input["motion"])
     if "light" in input:
         light = build_byte(input["light"])
-    out = bytes([0xfa, 0x01, motion, light, 0, 0, 0, 0, 0, 0])
+    out = bytearray([0xfa, 0x01, motion, light, 0, 0, 0, 0, 0, 0])
     crc = crc_bytes(0x07, out)
+    out.append(crc)
     print(', '.join('0x{:02x}'.format(x) for x in out))
-    print(hex(crc))
     s.write(out)
-    s.write(crc)
+    s.flush()
 
 
 def build_byte(arr):
