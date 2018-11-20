@@ -7,18 +7,22 @@ import json
 
 def main():
     # s = serial.Serial('/dev/ttyAMA0', 115200)
-    s = serial.Serial('/dev/tty.usbserial-1420', 115200)
+    s = serial.Serial('/dev/ttyAMA0', 115200)
     q = queue.Queue()
-    t = threading.Thread(name='read fifo', target=read, args=['/tmp/fifo', q])
+    t = threading.Thread(name='read fifo', target=read, args=['/home/pi/motion/fifo', q])
+    t.daemon = True
     t.start()
     while True:
         if q.empty():
-            time.sleep(1)
-            continue
+            try:
+                time.sleep(1)
+                continue
+            except KeyboardInterrupt:
+                break
         line = q.get()
         send_data(line, s)
 
-    pass
+    print('main loop finished')
 
 
 def send_data(data, s):
