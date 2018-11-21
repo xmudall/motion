@@ -1,11 +1,11 @@
 import time
-from io import BytesIO
 from picamera import PiCamera
 import numpy as np
 import json
 import os
 from flask import Flask
 from flask import render_template
+import threading
 
 width = 64 * 2
 height = 48 * 2
@@ -39,9 +39,13 @@ def post_snap():
     return ''
 
 
-def main():
+def start_app():
     # run app
     app.run(host='0.0.0.0')
+
+
+def main():
+    t = threading.Thread(name='web', target=start_app)
 
     if len(targets) == 0:
         print('invalid config file')
