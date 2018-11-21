@@ -10,7 +10,7 @@ if [ ! -d /tmp/log ]; then
     mkdir /tmp/log
 fi
 
-p3
+source /home/pi/env/p3/bin/activate
 
 nohup python -m flask run 2>&1 > $logfile & pid=$!
 

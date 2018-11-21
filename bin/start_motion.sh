@@ -9,7 +9,7 @@ if [ ! -d /tmp/log ]; then
     mkdir /tmp/log
 fi
 
-p3
+source /home/pi/env/p3/bin/activate
 
 nohup python $EXEC 2>&1 > $logfile & pid=$!
 
