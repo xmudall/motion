@@ -7,21 +7,114 @@
 <body>
 <h3>Configuration</h3>
 <h4>Screen Shot:</h4>
-<div><img id="screenshot" style="width: auto; height: auto" src="static/ss.jpg"></div>
+<!-- <div><img id="screenshot" style="width: 320px; height: 240px" src="static/ss.jpg"></div> -->
+<div><canvas id="canvas" width="320" height="240"></div>
 <button id="btn_ss">Click me to get screen shot!</button>
+<h4>Areas</h4>
+<ol id="areas">
+</ol>
+<button id="show">Show Area in Snap</button>
+<button id="add">Add Area</button>
+<button id="submit">Save Area</button>
 <script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
 <script type="text/javascript">
 $(function(){
     $('#btn_ss').on('click', function() {
         $.get('/snap');
-        // setTimeout(function () {
-        //     $('#screenshot').attr('src', "static/ss.jpg?t=" + new Date().getTime());
-        // }, 2000)
+        setTimeout(function () {
+            // $('#screenshot').attr('src', "static/ss.jpg?t=" + new Date().getTime());
+            draw();
+        }, 3000)
     });
-    setInterval(function () {
-        $('#screenshot').attr('src', "static/ss.jpg?t=" + new Date().getTime());
-    }, 2000)
+    $('#show').on('click', function() {
+        draw();
+    });
+    $('#add').on('click', function() {
+        let i = $('#areas>li').length;
+        $('#areas').append("<li id='area" + i + "'><input type='text'><button id='del" + i + "'>delete</button></li>");
+        $('#del'+i).on('click', function() {
+            $('#area'+i).remove();
+        });
+    });
+    $('#submit').on('click', function() {
+        let data = getData();
+        if (data.length === 0) { return; }
+        console.log('data: ' + JSON.stringify(data));
+        if (data.length > 0) {
+            $.ajax({
+                type: 'POST',
+                url: '/config', 
+                data: JSON.stringify(data), 
+                success: function() {
+                    alert('submit success');
+                    getConfig();
+                }, 
+                error: function(e) {
+                    alert('submit failed: ' + e.message);
+                    getConfig();
+                }, 
+                contentType: 'application/json'
+            });
+        }
+    });
+    getConfig();
 });
+function getData() {
+    let inputs = $('#areas>li>input');
+    let data = [];
+    for (let i = 0; i < inputs.length; i++) {
+        let input = inputs[i];
+        try {
+            let item = JSON.parse('[' + input.value + ']');
+            if (checkItem(item)) {
+                data.push(item);
+            } else {
+                alert('invalid format: ' + JSON.stringify(item));
+                return [];
+            }
+        } catch (e) {
+            alert('invalid format: ' + input.value);
+            return [];
+        }
+    }
+    return data;
+}
+function getConfig() {
+    $.get('/config', function(data) {
+        $('#areas').empty();
+        for (let i in data) {
+            let item = data[i];
+            $('#areas').append("<li id='area" + i + "'><input type='text' value='" + item + "'><button id='del" + i + "'>delete</button></li>");
+            $('#del'+i).on('click', function() {
+                $('#area'+i).remove();
+            });
+        }
+        draw();
+    });
+}
+function checkItem(item) {
+    if (item.length !== 4) { return false; }
+    if (isNaN(item[0]) || isNaN(item[1]) || isNaN(item[2]) || isNaN(item[3])) { return false; }
+    if (item[0] > item[2] || item[1] > item[3]) { return false; }
+    return true;
+}
+function draw() {
+    var c=document.getElementById("canvas");
+    var ctx=c.getContext("2d");
+    var img = new Image();
+    img.onload = function() { 
+        ctx.drawImage(img, 0, 0); 
+        let data = getData();
+        for (let item of data) {
+            ctx.beginPath();
+            ctx.rect(item[0], item[1], item[2] - item[0], item[3] - item[1]);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'green';
+            ctx.stroke();
+        }
+    };
+    img.src = "static/ss.jpg?t=" + new Date().getTime();
+}
 </script>
 </body>
 </html>
