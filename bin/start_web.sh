@@ -12,7 +12,7 @@ fi
 
 source /home/pi/env/p3/bin/activate
 
-nohup python -m flask run 2>&1 > $logfile & pid=$!
+nohup python -m flask run --host=0.0.0.0 2>&1 > $logfile & pid=$!
 
 echo "process flask pid "$pid" write to "$pidfile
 echo $pid > $pidfile
