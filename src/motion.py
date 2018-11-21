@@ -9,7 +9,8 @@ width = 320
 height = 240
 size = width * height
 config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config')
-print('config path: {}'.format(config_path))
+image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web/static/ss.jpg')
+print('config path: {}, image path: {}'.format(config_path, image_path))
 targets = np.loadtxt(config_path, dtype=int)
 ratio = 8
 thres = 500
@@ -21,10 +22,12 @@ def main():
         return
     # Create an in-memory stream
     camera = PiCamera()
+    camera.resolution = (width, height)
     camera.start_preview()
     # Camera warm-up time
     sleep(2)
     last_data = None
+    count = 0
     while True:
         my_stream = BytesIO()
         camera.capture(my_stream, format='yuv', resize=(width, height))
@@ -38,8 +41,12 @@ def main():
         if last_data is not None:
             judge_motion(last_data, data)
         judge_light(data)
-
         last_data = data
+
+        count = count + 1
+        if count % 10 == 0:
+            with open(image_path, 'wb') as file:
+                camera.capture(file)
         try:
             sleep(0.1)
         except KeyboardInterrupt:
