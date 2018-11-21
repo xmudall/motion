@@ -12,7 +12,7 @@ config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config')
 print('config path: {}'.format(config_path))
 targets = np.loadtxt(config_path, dtype=int)
 ratio = 8
-thres = 3000
+thres = 500
 
 
 def main():
@@ -28,6 +28,7 @@ def main():
     while True:
         my_stream = BytesIO()
         camera.capture(my_stream, format='yuv', resize=(width, height))
+        my_stream.seek(0)
         data = bytearray(size)
         ret = my_stream.readinto(data)
         my_stream.close()
@@ -40,7 +41,7 @@ def main():
 
         last_data = data
         try:
-            sleep(0.5)
+            sleep(0.1)
         except KeyboardInterrupt:
             break
     print("main loop finished")
@@ -65,9 +66,10 @@ def judge_motion(last, current):
     diff = np.zeros((inner_width, inner_height))
     for i in range(inner_width):
         for j in range(inner_height):
-            ic = current[i * ratio: (i + 1) * ratio]
-            il = last[i * ratio: (i + 1) * ratio]
-            idiff = np.subtract(ic, il)
+            ic = np.array(current[i * ratio: (i + 1) * ratio], dtype=int)
+            il = np.array(last[i * ratio: (i + 1) * ratio], dtype=int)
+            idiff = np.abs(np.subtract(ic, il))
+            idiff[idiff < 10] = 0
             diff[i, j] = np.sum(idiff)
     # 二值化
     diff[diff >= thres] = 1
