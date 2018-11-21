@@ -5,6 +5,9 @@ EXEC=$BIN_HOME/../src/snap.py
 sub=`date +%Y%m%d`
 pidfile=/tmp/snap.pid
 logfile=/tmp/log/snap_$sub.log
+if [ ! -d /tmp/log ]; then
+    mkdir /tmp/log
+fi
 
 p3
 

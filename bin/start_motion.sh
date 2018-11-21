@@ -5,6 +5,9 @@ EXEC=$BIN_HOME/../src/motion.py
 sub=`date +%Y%m%d`
 pidfile=/tmp/motion.pid
 logfile=/tmp/log/motion_$sub.log
+if [ ! -d /tmp/log ]; then
+    mkdir /tmp/log
+fi
 
 p3
 
