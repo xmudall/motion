@@ -3,8 +3,7 @@ from picamera import PiCamera
 import numpy as np
 import json
 import os
-from flask import Flask
-from flask import render_template
+from flask import Flask, render_template, request, jsonify
 import threading
 
 width = 64 * 2
@@ -40,6 +39,29 @@ def post_snap():
     return ''
 
 
+@app.route('/config', methods=['GET', 'POST'])
+def config():
+    if request.method == 'POST':
+        set_config(request.json)
+        return ''
+    else:
+        return get_config()
+
+
+def set_config(config):
+    if len(config) == 0:
+        return
+    with open(config_path, 'w', encoding='utf-8') as file:
+        for line in config:
+            file.write(' '.join(str(x) for x in line) + '\n')
+    global targets
+    targets = np.loadtxt(config_path, dtype=int)
+
+
+def get_config():
+    return jsonify(targets.tolist())
+
+
 def start_app():
     # run app
     app.run(host='0.0.0.0')
@@ -50,9 +72,6 @@ def main():
     t.daemon = True
     t.start()
 
-    if len(targets) == 0:
-        print('invalid config file')
-        return
     # Create an in-memory stream
     last_data = None
     # count = 0
