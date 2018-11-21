@@ -3,11 +3,14 @@ from io import BytesIO
 from picamera import PiCamera
 import numpy as np
 import json
+import os
 
 width = 320
 height = 240
 size = width * height
-targets = np.loadtxt('./config', dtype=int)
+config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config')
+print('config path: {}'.format(config_path))
+targets = np.loadtxt(config_path, dtype=int)
 ratio = 8
 thres = 3000
 

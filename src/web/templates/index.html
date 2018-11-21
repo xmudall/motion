@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuration</title>
+</head>
+<body>
+<h3>Configuration</h3>
+<h4>Screen Shot:</h4>
+<div><img id="screenshot" style="width: 640px; height: 480px" src="static/ss.jpg"></div>
+<div><input type="button" value="Click me to get screen shot!"></div>
+<script type="text/javascript">
+    setInterval(function () {
+        document.getElementById('screenshot').src = "static/ss.jpg?t=" + new Date().getTime();
+    }, 2000)
+</script>
+</body>
+</html>
