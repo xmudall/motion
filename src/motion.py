@@ -11,12 +11,13 @@ width = 64 * 2
 height = 48 * 2
 size = width * height
 config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config')
-image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web/static/ss.jpg')
+image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/ss.jpg')
 print('config path: {}, image path: {}'.format(config_path, image_path))
 targets = np.loadtxt(config_path, dtype=int)
 ratio = 8
 sthres = 1
 thres = ratio * ratio * 255 / 30
+snapping = False
 
 # camera
 camera = PiCamera()
@@ -46,19 +47,23 @@ def start_app():
 
 def main():
     t = threading.Thread(name='web', target=start_app)
+    t.daemon = True
+    t.start()
 
     if len(targets) == 0:
         print('invalid config file')
         return
     # Create an in-memory stream
     last_data = None
-    count = 0
+    # count = 0
     while True:
+        if snapping:
+            time.sleep(1)
+            continue
         data = np.empty((width, height), dtype=np.uint8)
         try:
             camera.capture(data, format='yuv', resize=(width, height))
         except IOError as e:
-            print(e)
             pass
         # for i in range(height):
         #     print(' '.join('{:3d}'.format(x) for x in data[i * width: (i+1) * width]))
@@ -69,9 +74,9 @@ def main():
         judge_light(data)
         last_data = data
 
-        count = count + 1
-        if count % 10 == 0:
-            snap()
+        # count = count + 1
+        # if count % 10 == 0:
+        #     snap()
 
         try:
             time.sleep(0.1)
@@ -81,8 +86,12 @@ def main():
 
 
 def snap():
+    global snapping
+    snapping = True
+    time.sleep(2)
     with open(image_path, 'wb+') as file:
         camera.capture(file, resize=(320, 240))
+    snapping = False
 
 
 def judge_light(current):
@@ -98,7 +107,7 @@ def judge_motion(last, current):
     #     return
     start = time.clock()
 
-    rects = np.divide(targets, ratio).astype(int)
+    rects = np.divide(targets, ratio * width / 320).astype(int)
     # 差值
     ih = int(height / ratio)
     iw = int(width / ratio)

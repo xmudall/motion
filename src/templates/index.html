@@ -7,16 +7,21 @@
 <body>
 <h3>Configuration</h3>
 <h4>Screen Shot:</h4>
-<div><img id="screenshot" style="width: 640px; height: 480px" src="static/ss.jpg"></div>
-<button onclick="post_snap">Click me to get screen shot!</button>
+<div><img id="screenshot" style="width: auto; height: auto" src="static/ss.jpg"></div>
+<button id="btn_ss">Click me to get screen shot!</button>
 <script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
 <script type="text/javascript">
-//    setInterval(function () {
-//        document.getElementById('screenshot').src = "static/ss.jpg?t=" + new Date().getTime();
-//    }, 2000)
-    function post_snap() {
+$(function(){
+    $('#btn_ss').on('click', function() {
         $.get('/snap');
-    }
+        // setTimeout(function () {
+        //     $('#screenshot').attr('src', "static/ss.jpg?t=" + new Date().getTime());
+        // }, 2000)
+    });
+    setInterval(function () {
+        $('#screenshot').attr('src', "static/ss.jpg?t=" + new Date().getTime());
+    }, 2000)
+});
 </script>
 </body>
 </html>
