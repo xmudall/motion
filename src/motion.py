@@ -1,19 +1,22 @@
-from time import sleep
+import time
 from io import BytesIO
 from picamera import PiCamera
 import numpy as np
 import json
 import os
 
-width = 320
-height = 240
+# width = 320
+# height = 240
+width = 64 * 2
+height = 48 * 2
 size = width * height
 config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config')
 image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web/static/ss.jpg')
 print('config path: {}, image path: {}'.format(config_path, image_path))
 targets = np.loadtxt(config_path, dtype=int)
 ratio = 8
-thres = 500
+sthres = 1
+thres = ratio * ratio * 255 / 30
 
 
 def main():
@@ -22,21 +25,21 @@ def main():
         return
     # Create an in-memory stream
     camera = PiCamera()
-    camera.resolution = (width, height)
     camera.start_preview()
     # Camera warm-up time
-    sleep(2)
+    time.sleep(2)
     last_data = None
     count = 0
     while True:
-        my_stream = BytesIO()
-        camera.capture(my_stream, format='yuv', resize=(width, height))
-        my_stream.seek(0)
-        data = bytearray(size)
-        ret = my_stream.readinto(data)
-        my_stream.close()
-        if ret != size:
-            print("read from stream failed, ret: {}".format(ret))
+        data = np.empty((width, height), dtype=np.uint8)
+        try:
+            camera.capture(data, format='yuv', resize=(width, height))
+        except IOError as e:
+            print(e)
+            pass
+        # for i in range(height):
+        #     print(' '.join('{:3d}'.format(x) for x in data[i * width: (i+1) * width]))
+        # print('\n\n')
 
         if last_data is not None:
             judge_motion(last_data, data)
@@ -46,9 +49,9 @@ def main():
         count = count + 1
         if count % 10 == 0:
             with open(image_path, 'wb') as file:
-                camera.capture(file)
+                camera.capture(file, resize=(320, 240))
         try:
-            sleep(0.1)
+            time.sleep(0.1)
         except KeyboardInterrupt:
             break
     print("main loop finished")
@@ -62,25 +65,22 @@ def judge_light(current):
 
 
 def judge_motion(last, current):
-    if len(last) != size or len(current) != size:
-        print('invalid input for judge motion')
-        return
+    # if len(last) != size or len(current) != size:
+    #     print('invalid input for judge motion')
+    #     return
+    start = time.clock()
 
     rects = np.divide(targets, ratio).astype(int)
-    inner_width = int(width / ratio)
-    inner_height = int(height / ratio)
     # 差值
-    diff = np.zeros((inner_width, inner_height))
-    for i in range(inner_width):
-        for j in range(inner_height):
-            ic = np.array(current[i * ratio: (i + 1) * ratio], dtype=int)
-            il = np.array(last[i * ratio: (i + 1) * ratio], dtype=int)
-            idiff = np.abs(np.subtract(ic, il))
-            idiff[idiff < 10] = 0
-            diff[i, j] = np.sum(idiff)
+    ih = int(height / ratio)
+    iw = int(width / ratio)
+    idiff = np.abs(np.subtract(last.astype(int), current.astype(int)))
+    idiff[idiff < sthres] = 0
+    diff = np.sum(idiff.reshape(ih, ratio, iw, -1), axis=(1,3))
     # 二值化
-    diff[diff >= thres] = 1
+    # print(diff)
     diff[diff < thres] = 0
+    diff[diff >= thres] = 1
     print(diff)
 
     res = []
@@ -93,10 +93,13 @@ def judge_motion(last, current):
 
     if len(res) > 0:
         with open('/home/pi/motion/fifo', 'w', encoding='utf-8') as file:
-            file.write(json.dumps({'motion': res}))
+            out = json.dumps({'motion': res})
+            print('write to serial: {}'.format(out))
+            file.write(out)
+
+    print('judge motion used: {}'.format(time.clock() - start))
 
 
 if __name__ == '__main__':
     main()
     # judge_motion(np.ones(size), np.zeros(size))
-
