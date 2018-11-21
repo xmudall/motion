@@ -4,9 +4,9 @@ from picamera import PiCamera
 import numpy as np
 import json
 import os
+from flask import Flask
+from flask import render_template
 
-# width = 320
-# height = 240
 width = 64 * 2
 height = 48 * 2
 size = width * height
@@ -18,16 +18,35 @@ ratio = 8
 sthres = 1
 thres = ratio * ratio * 255 / 30
 
+# camera
+camera = PiCamera()
+camera.start_preview()
+# Camera warm-up time
+time.sleep(2)
+
+# flask
+app = Flask(__name__)
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/snap')
+def post_snap():
+    snap()
+    return ''
+
 
 def main():
+    # run app
+    app.run(host='0.0.0.0')
+
     if len(targets) == 0:
         print('invalid config file')
         return
     # Create an in-memory stream
-    camera = PiCamera()
-    camera.start_preview()
-    # Camera warm-up time
-    time.sleep(2)
     last_data = None
     count = 0
     while True:
@@ -48,13 +67,18 @@ def main():
 
         count = count + 1
         if count % 10 == 0:
-            with open(image_path, 'wb') as file:
-                camera.capture(file, resize=(320, 240))
+            snap()
+
         try:
             time.sleep(0.1)
         except KeyboardInterrupt:
             break
     print("main loop finished")
+
+
+def snap():
+    with open(image_path, 'wb+') as file:
+        camera.capture(file, resize=(320, 240))
 
 
 def judge_light(current):
