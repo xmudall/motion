@@ -8,14 +8,15 @@ import threading
 
 width = 64 * 2
 height = 48 * 2
+ratio = 8
+sthres = 1
+thres = ratio * ratio * 255 / 30
 size = width * height
 config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config')
 image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/ss.jpg')
 print('config path: {}, image path: {}'.format(config_path, image_path))
 targets = np.loadtxt(config_path, dtype=int)
-ratio = 8
-sthres = 1
-thres = ratio * ratio * 255 / 30
+rects = np.divide(targets, ratio * width / 320).astype(int)
 snapping = False
 
 # camera
@@ -117,7 +118,17 @@ def judge_light(current):
     if len(current) != size:
         print('invalid input for judge light')
         return
-    pass
+
+    res = {}
+    for i in range(len(rects)):
+        rect = rects[i]
+        submatrix = current[rect[0]:rect[2], rect[1]:rect[3]]
+        res[i] = int(np.average(submatrix))
+
+    with open('/home/pi/motion/fifo', 'w', encoding='utf-8') as file:
+        out = json.dumps({'light': res})
+        print('write to serial: {}'.format(out))
+        file.write(out)
 
 
 def judge_motion(last, current):
@@ -126,7 +137,6 @@ def judge_motion(last, current):
     #     return
     start = time.clock()
 
-    rects = np.divide(targets, ratio * width / 320).astype(int)
     # 差值
     ih = int(height / ratio)
     iw = int(width / ratio)

@@ -5,11 +5,16 @@ import time
 import json
 
 
+input_path = '/home/pi/motion/fifo'
+serial_dev = '/dev/ttyAMA0'
+# input_path = '/tmp/fifo'
+# serial_dev = '/dev/tty.usbserial-A601NJ8V'
+
+
 def main():
-    # s = serial.Serial('/dev/ttyAMA0', 115200)
-    s = serial.Serial('/dev/ttyAMA0', 115200)
+    s = serial.Serial(serial_dev, 115200)
     q = queue.Queue()
-    t = threading.Thread(name='read fifo', target=read, args=['/home/pi/motion/fifo', q])
+    t = threading.Thread(name='read fifo', target=read, args=[input_path, q])
     t.daemon = True
     t.start()
     while True:
@@ -19,27 +24,22 @@ def main():
                 continue
             except KeyboardInterrupt:
                 break
-        line = q.get()
-        send_data(line, s)
+        data = q.get()
+        send_data(data, s)
 
     print('main loop finished')
 
 
 def send_data(data, s):
     # data like { "motion": [ 1, 2, 4], "light": [2, 6] }
-    print("send data: {}".format(data))
-    try:
-        input = json.loads(data)
-    except Exception as e:
-        print("can't parse data: {}".format(e))
-        return
+    print("send data: {}".format(json.dumps(data)))
     motion = 0
-    light = 0
-    if "motion" in input:
-        motion = build_byte(input["motion"])
-    if "light" in input:
-        light = build_byte(input["light"])
-    out = bytearray([0xfa, 0x01, motion, light, 0, 0, 0, 0, 0, 0])
+    if "motion" in data:
+        motion = array_to_bits(data["motion"])
+    out = bytearray([0xfa, 0x01, motion, 0x0f, 0, 0, 0, 0, 0, 0])
+    if "light" in data:
+        for k, v in data['light'].items():
+            out[4+int(k)] = v
     crc = crc_bytes(0x07, out)
     out.append(crc)
     print(', '.join('0x{:02x}'.format(x) for x in out))
@@ -47,10 +47,10 @@ def send_data(data, s):
     s.flush()
 
 
-def build_byte(arr):
+def array_to_bits(arr):
     out = 0
     for i in range(0, len(arr)):
-        out = out + (0x01 << arr[i])
+        out = out | (0x01 << arr[i])
     return out
 
 
@@ -73,15 +73,35 @@ def crc_byte(poly, data):
 
 def read(filename, q):
     print('start reading from fifo')
+    last_time = time.perf_counter()
+    data = {}
     with open(filename, 'r', encoding='utf-8') as ifile:
         while True:
             line = ifile.readline()
             if line == '':
+                # print('warn: read empty input')
                 time.sleep(0.01)
-                continue
-            if q.qsize() > 10:
-                continue
-            q.put(line)
+            else:
+                print('read data: ' + line)
+                try:
+                    input = json.loads(line)
+                    if "motion" in input:
+                        if 'motion' in data:
+                            data['motion'] = data['motion'] + input['motion']
+                        else:
+                            data['motion'] = input['motion']
+                    if "light" in input:
+                        data['light'] = input['light']
+                except Exception as e:
+                    print("can't parse data: {}".format(e))
+                    return
+
+            if time.perf_counter() - last_time > 0.5:
+                if len(data) > 0 and q.qsize() < 10:
+                    print('put data: ' + json.dumps(data))
+                    q.put(data)
+                last_time = time.perf_counter()
+                data = {}
 
 
 if __name__ == '__main__':
