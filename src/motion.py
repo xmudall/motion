@@ -119,7 +119,7 @@ def judge_light(current):
     res = {}
     for i in range(len(rects)):
         rect = rects[i]
-        submatrix = current[rect[0]:rect[2], rect[1]:rect[3]]
+        submatrix = current[rect[1]:rect[3], rect[0]:rect[2]]
         res[i] = int(np.average(submatrix))
 
     with open('/home/pi/motion/fifo', 'w', encoding='utf-8') as file:
@@ -149,7 +149,7 @@ def judge_motion(last, current):
     res = []
     for i in range(len(rects)):
         rect = rects[i]
-        submatrix = diff[rect[0]:rect[2], rect[1]:rect[3]]
+        submatrix = diff[rect[1]:rect[3], rect[0]:rect[2]]
         print(submatrix)
         if np.sum(submatrix) > 0:
             res.append(i)
