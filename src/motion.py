@@ -16,7 +16,7 @@ config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config')
 image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/ss.jpg')
 print('config path: {}, image path: {}'.format(config_path, image_path))
 targets = np.loadtxt(config_path, dtype=int)
-rects = np.divide(targets, ratio * width / 320).astype(int)
+rects = np.divide(targets, ratio * 320 / width).astype(int)
 snapping = False
 
 # camera
@@ -115,9 +115,6 @@ def snap():
 
 
 def judge_light(current):
-    if len(current) != size:
-        print('invalid input for judge light')
-        return
 
     res = {}
     for i in range(len(rects)):
@@ -126,7 +123,7 @@ def judge_light(current):
         res[i] = int(np.average(submatrix))
 
     with open('/home/pi/motion/fifo', 'w', encoding='utf-8') as file:
-        out = json.dumps({'light': res})
+        out = json.dumps({'light': res}) + '\n'
         print('write to serial: {}'.format(out))
         file.write(out)
 
@@ -159,7 +156,7 @@ def judge_motion(last, current):
 
     if len(res) > 0:
         with open('/home/pi/motion/fifo', 'w', encoding='utf-8') as file:
-            out = json.dumps({'motion': res})
+            out = json.dumps({'motion': res}) + '\n'
             print('write to serial: {}'.format(out))
             file.write(out)
 

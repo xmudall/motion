@@ -94,7 +94,6 @@ def read(filename, q):
                         data['light'] = input['light']
                 except Exception as e:
                     print("can't parse data: {}".format(e))
-                    return
 
             if time.perf_counter() - last_time > 0.5:
                 if len(data) > 0 and q.qsize() < 10:
