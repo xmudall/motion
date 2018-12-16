@@ -117,6 +117,10 @@ def snap():
 def judge_light(current):
 
     res = {}
+    ih = int(height / ratio)
+    iw = int(width / ratio)
+    current = np.sum(current.reshape(ih, ratio, iw, -1), axis=(1,3))
+    current = np.divide(current, ratio * ratio).astype(int)
     for i in range(len(rects)):
         rect = rects[i]
         submatrix = current[rect[1]:rect[3], rect[0]:rect[2]]
