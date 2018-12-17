@@ -3,12 +3,16 @@ import serial
 import threading
 import time
 import json
+import subprocess
 
 
-input_path = '/home/pi/motion/fifo'
-serial_dev = '/dev/ttyAMA0'
-# input_path = '/tmp/fifo'
-# serial_dev = '/dev/tty.usbserial-A601NJ8V'
+# input_path = '/home/pi/motion/fifo'
+# serial_dev = '/dev/ttyAMA0'
+input_path = '/tmp/fifo'
+serial_dev = '/dev/tty.usbserial-1410'
+
+P_TURN_ON_AP = b'\xfa\x0a\x00\x00\x00\x00\x00\x00\x00\x00\xd1'
+P_TURN_OFF_AP = b'\xfa\x0b\x00\x00\x00\x00\x00\x00\x00\x00\xa8'
 
 
 def main():
@@ -17,6 +21,9 @@ def main():
     t = threading.Thread(name='read fifo', target=read, args=[input_path, q])
     t.daemon = True
     t.start()
+    t2 = threading.Thread(name='read serial', target=read_serial, args=[s])
+    t2.daemon = True
+    t2.start()
     while True:
         if q.empty():
             try:
@@ -28,6 +35,24 @@ def main():
         send_data(data, s)
 
     print('main loop finished')
+
+
+def read_serial(s):
+    while True:
+        rb = s.read(size=11)
+        handle_serial_in(rb)
+
+
+def handle_serial_in(proto):
+    try:
+        if proto == P_TURN_ON_AP:
+            print("try to start ap")
+            subprocess.call(['sudo', 'service', 'hostapd', 'start'])
+        elif proto == P_TURN_OFF_AP:
+            print("try to stop ap")
+            subprocess.call(['sudo', 'service', 'hostapd', 'stop'])
+    except Exception as e:
+        print("execute service command failed. " + e.msg)
 
 
 def send_data(data, s):
