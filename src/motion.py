@@ -12,11 +12,16 @@ ratio = 8
 sthres = 1
 thres = ratio * ratio * 255 / 30
 size = width * height
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config')
+motion_config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'motion_config')
+lux_config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lux_config')
 image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/ss.jpg')
-print('config path: {}, image path: {}'.format(config_path, image_path))
-targets = np.loadtxt(config_path, dtype=int)
-rects = np.divide(targets, ratio * 320 / width).astype(int)
+print('motion config path: {}, image path: {}'.format(motion_config_path, image_path))
+print('lux config path: {}, image path: {}'.format(lux_config_path, image_path))
+motion_targets = np.loadtxt(motion_config_path, dtype=int)
+lux_targets = np.loadtxt(lux_config_path, dtype=int)
+motion_rects = np.divide(motion_targets, ratio * 320 / width).astype(int)
+lux_rects = np.divide(lux_targets, ratio * 320 / width).astype(int)
+
 snapping = False
 
 # camera
@@ -40,28 +45,45 @@ def post_snap():
     return ''
 
 
-@app.route('/config', methods=['GET', 'POST'])
-def config():
+@app.route('/motion_config', methods=['GET', 'POST'])
+def config_motion():
     if request.method == 'POST':
-        set_config(request.json)
+        set_motion_config(request.json)
         return ''
     else:
-        return get_config()
+        return get_motion_config()
 
+@app.route('/lux_config', methods=['GET', 'POST'])
+def config_lux():
+    if request.method == 'POST':
+        set_lux_config(request.json)
+        return ''
+    else:
+        return get_lux_config()
 
-def set_config(config):
+def set_motion_config(config):
     if len(config) == 0:
         return
-    with open(config_path, 'w', encoding='utf-8') as file:
+    with open(motion_config_path, 'w', encoding='utf-8') as file:
         for line in config:
             file.write(' '.join(str(x) for x in line) + '\n')
-    global targets
-    targets = np.loadtxt(config_path, dtype=int)
+    global motion_targets
+    motion_targets = np.loadtxt(motion_config_path, dtype=int)
 
+def set_lux_config(config):
+    if len(config) == 0:
+        return
+    with open(lux_config_path, 'w', encoding='utf-8') as file:
+        for line in config:
+            file.write(' '.join(str(x) for x in line) + '\n')
+    global lux_targets
+    lux_targets = np.loadtxt(lux_config_path, dtype=int)
 
-def get_config():
-    return jsonify(targets.tolist())
+def get_motion_config():
+    return jsonify(motion_targets.tolist())
 
+def get_lux_config():
+    return jsonify(lux_targets.tolist())
 
 def start_app():
     # run app
@@ -121,8 +143,8 @@ def judge_light(current):
     iw = int(width / ratio)
     current = np.sum(current.reshape(ih, ratio, iw, -1), axis=(1,3))
     current = np.divide(current, ratio * ratio).astype(int)
-    for i in range(len(rects)):
-        rect = rects[i]
+    for i in range(len(lux_rects)):
+        rect = lux_rects[i]
         submatrix = current[rect[1]:rect[3], rect[0]:rect[2]]
         res[i] = int(np.average(submatrix))
 
@@ -151,8 +173,8 @@ def judge_motion(last, current):
     print(diff)
 
     res = []
-    for i in range(len(rects)):
-        rect = rects[i]
+    for i in range(len(motion_rects)):
+        rect = motion_rects[i]
         submatrix = diff[rect[1]:rect[3], rect[0]:rect[2]]
         print(submatrix)
         if np.sum(submatrix) > 0:
