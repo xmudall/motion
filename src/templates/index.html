@@ -14,7 +14,7 @@
 <ol id="areas">
 </ol>
 <button id="show">Show Area in Snap</button>
-<button id="add">Add Area</button>
+<!--button id="add">Add Area</button-->
 <button id="submit">Save Area</button>
 <script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
 <script type="text/javascript">
@@ -31,7 +31,7 @@ $(function(){
     });
     $('#add').on('click', function() {
         let i = $('#areas>li').length;
-        $('#areas').append("<li id='area" + i + "'><input type='text'><button id='del" + i + "'>delete</button></li>");
+        $('#areas').append("<li id='area" + i + "'><input type='text'><!--button id='del" + i + "'>delete</button--></li>");
         $('#del'+i).on('click', function() {
             $('#area'+i).remove();
         });
@@ -84,7 +84,7 @@ function getConfig() {
         $('#areas').empty();
         for (let i in data) {
             let item = data[i];
-            $('#areas').append("<li id='area" + i + "'><input type='text' value='" + item + "'><button id='del" + i + "'>delete</button></li>");
+            $('#areas').append("<li id='area" + i + "'><input type='text' value='" + item + "'><!--button id='del" + i + "'>delete</button--></li>");
             $('#del'+i).on('click', function() {
                 $('#area'+i).remove();
             });
