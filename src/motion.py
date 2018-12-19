@@ -5,6 +5,7 @@ import json
 import os
 from flask import Flask, render_template, request, jsonify
 import threading
+import subprocess
 
 width = 64 * 2
 height = 48 * 2
@@ -42,6 +43,16 @@ def index():
 @app.route('/snap')
 def post_snap():
     snap()
+    return ''
+
+@app.route('/reboot')
+def reboot():
+    subprocess.call(['sudo', 'reboot'])
+    return ''
+
+@app.route('/restart_app')
+def restart_app():
+    subprocess.call(['/home/pi/motion/bin/stop_all.sh'])
     return ''
 
 
