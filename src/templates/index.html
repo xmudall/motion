@@ -4,63 +4,138 @@
     <meta charset="UTF-8">
     <title>Configuration</title>
 </head>
-<body>
-<h3>Configuration</h3>
-<h4>Screen Shot:</h4>
-<!-- <div><img id="screenshot" style="width: 320px; height: 240px" src="static/ss.jpg"></div> -->
-<div><canvas id="canvas" width="320" height="240"/></div>
-<button id="btn_ss">Click me to get screen shot!</button>
-<h4>Areas</h4>
-<ol id="areas">
-</ol>
-<button id="show">Show Area in Snap</button>
-<button id="add">Add Area</button>
-<button id="submit">Save Area</button>
+<body style="color:#666666; width:100%; height:100%;">
+<div style="position:absolute; width:780px; height: 770px; left:50%; top:50%; margin-left:-400px; top:40px; backgroun-color: #EEEEEE; border-radius:5px; box-shadow: 2px 2px 10px #888888;">
+    <div style="background-color:#DDDDDD; border-bottom:1px solid #DDDDDD; height:60px; position:absolute; left:0px; right:0px; top:0px; text-align:center; border-top-left-radius:5px; border-top-right-radius:5px;">
+        <span style="font-size:20px; line-height:60px;">Motion-Lux Camera Configuration</span>
+    </div>
+    <fieldset style="width:320px; height:320px; position:absolute; left:20px; top:70px; border:1px solid #DDDDDD; border-radius:5px;">
+        <legend style="font-size:15px; color:#AA0000;">Motion Screen Shot</legend>
+        <!-- <div><img id="screenshot" style="width: 320px; height: 240px" src="static/ss.jpg"></div> -->
+        <div><canvas id="motion_canvas" width="320" height="240"/></div>
+        <button id="motion_btn_ss" style="width:320px; height:40px; color:#666666;">Click Me To Get Motion Screen Shot!</button>
+    </fieldset>
+    <fieldset style="width:320px; height:320px; position:absolute; right:20px; top:70px; border:1px solid #DDDDDD; border-radius:5px;">
+        <legend style="font-size:15px; color:#AA0000;">Lux Screen Shot</legend>
+        <!-- <div><img id="screenshot" style="width: 320px; height: 240px" src="static/ss.jpg"></div> -->
+        <div><canvas id="lux_canvas" width="320" height="240"/></div>
+        <button id="lux_btn_ss" style="width:320px; height:40px; color:#666666;">Click Me To Get Lux Screen Shot!</button>
+    </fieldset>
+    <fieldset style="width:320px; position:absolute; height:210px; position:absolute; left:20px; top:420px; border:1px solid #DDDDDD; border-radius:5px;">
+        <legend style="font-size:15px; color:#AA0000;">Motion Areas</legend>
+        <ol id="motion_areas">
+        </ol>
+	<span style="font-size:12px; float:right; margin-bottom:10px;">Attention: Area Format Is "x1,y1,x2,y2"</span>
+        <button id="motion_show" style="width:160px; height:40px; color:#666666; float:right; margin-left: 5px;">Show Area in Snap</button>
+        <!--button id="add">Add Area</button-->
+        <button id="motion_submit" style="width:150px; height:40px; color:#666666; float:right;">Save Area</button>
+    </fieldset>
+    <fieldset style="width:320px; position:absolute; height:210px; position:absolute; right:20px; top:420px; border:1px solid #DDDDDD; border-radius:5px;">
+        <legend style="font-size:15px; color:#AA0000;">Lux Areas</legend>
+        <ol id="lux_areas">
+        </ol>
+	<span style="font-size:12px; float:right; margin-bottom:10px;">Attention: Area Format Is "x1,y1,x2,y2"</span>
+        <button id="lux_show" style="width:160px; height:40px; color:#666666; float:right; margin-left: 5px;">Show Area in Snap</button>
+        <!--button id="add">Add Area</button-->
+        <button id="lux_submit" style="width:150px; height:40px; color:#666666; float:right;">Save Area</button>
+    </fieldset>
+    <hr style="position:absolute; height:0px; left: 20px; right:20px; bottom:100px;"/>
+    <div style="width:800px; position:absolute; height:50px; left:0px; bottom:40px; font-size:15px; color:#DDDDDD; text-align:center;">
+        <button id="reboot" style="width:160px; height:40px; color:#666666; margin-left: 5px;">Reboot</button>
+        <button id="restart_app" style="width:160px; height:40px; color:#666666;">Restart Application</button>
+    </div>
+    <div style="width:800px; position:absolute; height:30px; left:0px; bottom:10px; line-height:30px; font-size:15px; color:#DDDDDD; text-align:center;">TAI KWAN TECHNOLOGY CO., LTD.</div>
+</div>
 <script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
 <script type="text/javascript">
 $(function(){
-    $('#btn_ss').on('click', function() {
+    $('#reboot').on('click', function(){
+	if (confirm("Are you sure to reboot?")){
+	    $.get('/reboot');
+	}
+    });
+    $('#restart_app').on('click', function(){
+	if (confirm("Are you sure to restart application?")){
+	    $.get('/restart_app');
+	}
+    });
+    $('#motion_btn_ss').on('click', function() {
         $.get('/snap');
         setTimeout(function () {
             // $('#screenshot').attr('src', "static/ss.jpg?t=" + new Date().getTime());
-            draw();
+            draw_motion();
         }, 3000)
     });
-    $('#show').on('click', function() {
-        draw();
+    $('#lux_btn_ss').on('click', function() {
+        $.get('/snap');
+        setTimeout(function () {
+            // $('#screenshot').attr('src', "static/ss.jpg?t=" + new Date().getTime());
+            draw_lux();
+        }, 3000)
     });
+    
+    $('#motion_show').on('click', function() {
+        draw_motion();
+    });
+    $('#lux_show').on('click', function() {
+        draw_lux();
+    });
+    /*
     $('#add').on('click', function() {
         let i = $('#areas>li').length;
-        $('#areas').append("<li id='area" + i + "'><input type='text'><button id='del" + i + "'>delete</button></li>");
+	$('#areas').append("<li id='area" + i + "'><input type='text' style='width:280px;'><!--button id='del" + i + "'>delete</button--></li>");
         $('#del'+i).on('click', function() {
             $('#area'+i).remove();
         });
     });
-    $('#submit').on('click', function() {
-        let data = getData();
+    */
+    $('#motion_submit').on('click', function() {
+        let data = getMotionData();
         if (data.length === 0) { return; }
         console.log('data: ' + JSON.stringify(data));
         if (data.length > 0) {
             $.ajax({
                 type: 'POST',
-                url: '/config', 
+                url: '/motion_config', 
                 data: JSON.stringify(data), 
                 success: function() {
                     alert('submit success');
-                    getConfig();
+                    getMotionConfig();
                 }, 
                 error: function(e) {
                     alert('submit failed: ' + e.message);
-                    getConfig();
+                    getMotionConfig();
                 }, 
                 contentType: 'application/json'
             });
         }
     });
-    getConfig();
+    $('#lux_submit').on('click', function() {
+        let data = getLuxData();
+        if (data.length === 0) { return; }
+        console.log('data: ' + JSON.stringify(data));
+        if (data.length > 0) {
+            $.ajax({
+                type: 'POST',
+                url: '/lux_config', 
+                data: JSON.stringify(data), 
+                success: function() {
+                    alert('submit success');
+                    getLuxConfig();
+                }, 
+                error: function(e) {
+                    alert('submit failed: ' + e.message);
+                    getLuxConfig();
+                }, 
+                contentType: 'application/json'
+            });
+        }
+    });
+    getMotionConfig();
+    getLuxConfig();
 });
-function getData() {
-    let inputs = $('#areas>li>input');
+function getMotionData() {
+    let inputs = $('#motion_areas>li>input');
     let data = [];
     for (let i = 0; i < inputs.length; i++) {
         let input = inputs[i];
@@ -79,17 +154,54 @@ function getData() {
     }
     return data;
 }
-function getConfig() {
-    $.get('/config', function(data) {
-        $('#areas').empty();
+function getLuxData() {
+    let inputs = $('#lux_areas>li>input');
+    let data = [];
+    for (let i = 0; i < inputs.length; i++) {
+        let input = inputs[i];
+        try {
+            let item = JSON.parse('[' + input.value + ']');
+            if (checkItem(item)) {
+                data.push(item);
+            } else {
+                alert('invalid format: ' + JSON.stringify(item));
+                return [];
+            }
+        } catch (e) {
+            alert('invalid format: ' + input.value);
+            return [];
+        }
+    }
+    return data;
+}
+function getMotionConfig() {
+    $.get('/motion_config', function(data) {
+        $('#motion_areas').empty();
         for (let i in data) {
             let item = data[i];
-            $('#areas').append("<li id='area" + i + "'><input type='text' value='" + item + "'><button id='del" + i + "'>delete</button></li>");
+	    $('#motion_areas').append("<li id='motion_area" + i + "'><input type='text' value='" + item + "' style='width:280px;'><!--button id='del" + i + "'>delete</button--></li>");
+	    /*
             $('#del'+i).on('click', function() {
                 $('#area'+i).remove();
             });
+	    */
         }
-        draw();
+        draw_motion();
+    });
+}
+function getLuxConfig() {
+    $.get('/lux_config', function(data) {
+        $('#lux_areas').empty();
+        for (let i in data) {
+            let item = data[i];
+	    $('#lux_areas').append("<li id='lux_area" + i + "'><input type='text' value='" + item + "' style='width:280px;'><!--button id='del" + i + "'>delete</button--></li>");
+	    /*
+            $('#del'+i).on('click', function() {
+                $('#area'+i).remove();
+            });
+	    */
+        }
+        draw_lux();
     });
 }
 function checkItem(item) {
@@ -98,19 +210,51 @@ function checkItem(item) {
     if (item[0] > item[2] || item[1] > item[3]) { return false; }
     return true;
 }
-function draw() {
-    var c=document.getElementById("canvas");
+function draw_motion() {
+    var c=document.getElementById("motion_canvas");
     var ctx=c.getContext("2d");
     var img = new Image();
     img.onload = function() { 
         ctx.drawImage(img, 0, 0); 
-        let data = getData();
+        let data = getMotionData();
+	var order=1;
         for (let item of data) {
             ctx.beginPath();
             ctx.rect(item[0], item[1], item[2] - item[0], item[3] - item[1]);
             ctx.lineWidth = 4;
             ctx.strokeStyle = 'green';
             ctx.stroke();
+	    ctx.textAlign='left';
+	    ctx.textBaseline='top';
+	    ctx.fillStyle='red';
+	    ctx.font='12px Arial';
+	    ctx.fillText(""+order, item[0]+5, item[1]+5);
+	    order=order+1;
+        }
+    };
+    img.src = "static/ss.jpg?t=" + new Date().getTime();
+//    img.src = "https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1544882788039&di=efedcef39f0c04712c5d609ac9644110&imgtype=0&src=http%3A%2F%2Fe.hiphotos.baidu.com%2Fimage%2Fpic%2Fitem%2Fb151f8198618367afe76969623738bd4b21ce5fa.jpg"
+}
+function draw_lux() {
+    var c=document.getElementById("lux_canvas");
+    var ctx=c.getContext("2d");
+    var img = new Image();
+    img.onload = function() { 
+        ctx.drawImage(img, 0, 0); 
+        let data = getLuxData();
+	var order=1;
+        for (let item of data) {
+            ctx.beginPath();
+            ctx.rect(item[0], item[1], item[2] - item[0], item[3] - item[1]);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'red';
+            ctx.stroke();
+	    ctx.textAlign='left';
+	    ctx.textBaseline='top';
+	    ctx.fillStyle='green';
+	    ctx.font='12px Arial';
+	    ctx.fillText(""+order, item[0]+5, item[1]+5);
+	    order=order+1;
         }
     };
     img.src = "static/ss.jpg?t=" + new Date().getTime();

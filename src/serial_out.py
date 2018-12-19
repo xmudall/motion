@@ -6,16 +6,21 @@ import json
 import subprocess
 
 
-# input_path = '/home/pi/motion/fifo'
-# serial_dev = '/dev/ttyAMA0'
-input_path = '/tmp/fifo'
-serial_dev = '/dev/tty.usbserial-1410'
+input_path = '/home/pi/motion/fifo'
+serial_dev = '/dev/ttyAMA0'
+#input_path = '/tmp/fifo'
+#serial_dev = '/dev/tty.usbserial-1410'
 
 P_TURN_ON_AP = b'\xfa\x0a\x00\x00\x00\x00\x00\x00\x00\x00\xd1'
 P_TURN_OFF_AP = b'\xfa\x0b\x00\x00\x00\x00\x00\x00\x00\x00\xa8'
 
+HOSTAPD_STATUS_QUERY_MAX_INTERVAL_SEC = 10
+
+hostapd_is_opened=False
+hostapd_status_query_hold_sec = 0
 
 def main():
+    global hostapd_status_query_hold_sec
     s = serial.Serial(serial_dev, 115200)
     q = queue.Queue()
     t = threading.Thread(name='read fifo', target=read, args=[input_path, q])
@@ -24,8 +29,16 @@ def main():
     t2 = threading.Thread(name='read serial', target=read_serial, args=[s])
     t2.daemon = True
     t2.start()
+    t3 = threading.Thread(name='read hostapd status', target=read_hostapd_status)
+    t3.daemon = True
+    t3.start()
     while True:
         if q.empty():
+            hostapd_status_query_hold_sec = hostapd_status_query_hold_sec+1
+            if hostapd_status_query_hold_sec >= HOSTAPD_STATUS_QUERY_MAX_INTERVAL_SEC:
+                # send hostapd status force when queue is empty for a long time
+                send_hostapd_status_data(s)
+                hostapd_status_query_hold_sec=0
             try:
                 time.sleep(1)
                 continue
@@ -33,9 +46,24 @@ def main():
                 break
         data = q.get()
         send_data(data, s)
+        hostapd_status_query_hold_sec=0
 
     print('main loop finished')
 
+def read_hostapd_status():
+    global hostapd_is_opened
+    while True:
+        out=subprocess.getstatusoutput("service hostapd status | grep 'Active:'");
+        if len(out) < 2:
+            hostapd_is_opened = False
+            return;
+        result=out[1]
+        print(result)
+        if "running" in result:
+            hostapd_is_opened = True
+        else:
+            hostapd_is_opened = False
+        time.sleep(3)
 
 def read_serial(s):
     while True:
@@ -57,6 +85,7 @@ def handle_serial_in(proto):
 
 def send_data(data, s):
     # data like { "motion": [ 1, 2, 4], "light": [2, 6] }
+    global hostapd_is_opened
     print("send data: {}".format(json.dumps(data)))
     motion = 0
     if "motion" in data:
@@ -65,12 +94,28 @@ def send_data(data, s):
     if "light" in data:
         for k, v in data['light'].items():
             out[4+int(k)] = v
+    if hostapd_is_opened:
+        out[8]=0x0a
+    else:
+        out[8]=0x0b
     crc = crc_bytes(0x07, out)
     out.append(crc)
     print(', '.join('0x{:02x}'.format(x) for x in out))
     s.write(out)
     s.flush()
 
+def send_hostapd_status_data(s):
+    global hostapd_is_opened
+    out = bytearray([0xfa, 0x01, 0, 0, 0, 0, 0, 0, 0, 0])
+    if hostapd_is_opened:
+        out[8]=0x0a
+    else:
+        out[8]=0x0b
+    crc = crc_bytes(0x07, out)
+    out.append(crc)
+    print(', '.join('0x{:02x}'.format(x) for x in out))
+    s.write(out)
+    s.flush()
 
 def array_to_bits(arr):
     out = 0
