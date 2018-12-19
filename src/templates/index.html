@@ -105,12 +105,19 @@ function draw() {
     img.onload = function() { 
         ctx.drawImage(img, 0, 0); 
         let data = getData();
+	var order=1;
         for (let item of data) {
             ctx.beginPath();
             ctx.rect(item[0], item[1], item[2] - item[0], item[3] - item[1]);
             ctx.lineWidth = 4;
             ctx.strokeStyle = 'green';
             ctx.stroke();
+	    ctx.textAlign='left';
+	    ctx.textBaseline='top';
+	    ctx.fillStyle='red';
+	    ctx.font='12px Arial';
+	    ctx.fillText(""+order, item[0]+5, item[1]+5);
+	    order=order+1;
         }
     };
     img.src = "static/ss.jpg?t=" + new Date().getTime();
